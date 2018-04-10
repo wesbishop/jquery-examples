@@ -4,8 +4,11 @@
 <head>
   <meta charset="utf-8">
   <title>TODO List</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css" integrity="sha384-/Y6pD6FV/Vv2HJnA6t+vslU6fwYXjCFtcEpHbNJ0lyAFsXTsjBbfaDjzALeQsN6M" crossorigin="anonymous">
+  <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.11.0/umd/popper.min.js" integrity="sha384-b/U6ypiBEHpOf/4+1nzFpr53nxSS+GLCkfwBdFNTxtclqqenISfwAzpKaMNFNmj4" crossorigin="anonymous"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/js/bootstrap.min.js" integrity="sha384-h0AbiXch4ZDo7tp9hKZ4TsHbi047NrKGLO3SEJAg45jXxnGIfYzk4Si90RDIqNm1" crossorigin="anonymous"></script>
+
 
   <script>
     // STATE
@@ -14,18 +17,18 @@
     var instructions = "";
     var selectedTask = -1;
     var templateCSS_Completed = "text-decoration: line-through";
-    var templateListItemHTML = '<li class="list-group-item text-left" id="task-${taskID}" style="${style}">${taskName}</li>';
-    var addTaskHTML = `<div class="item-hl ml-2" id="input-section-textbox">
+    var templateHTML_ListItem = '<li class="list-group-item text-left" id="task-${taskID}" style="${style}">${taskName}</li>';
+    var addTaskHTML = `<div class="ml-2" id="input-section-textbox">
                          <textarea id="input-task-name" rows="1" cols="50" class="form-control" placeholder="Task name..."></textarea>
                        </div>
-                       <div class="item-hl ml-2 align-top" id="input-section-addbutton">
+                       <div class="ml-2 align-top" id="input-section-addbutton">
                          <button id = "btn-add-task" class="btn btn-warning align-top" type="button">Add</button>
                        </div>`;
 
-    var changeTaskHTML = `<div class="item-hl ml-2" id="input-section-textbox">
-                            <textarea id="input-task-name" rows="1" cols="40" class="form-control" placeholder="Task name..."></textarea>
+    var changeTaskHTML = `<div class="ml-2" id="input-section-textbox">
+                            <textarea id="input-task-name" rows="1" cols="50" class="form-control" placeholder="Task name..."></textarea>
                           </div>
-                          <div class="item-hl ml-2" id="input-section-changebutton">
+                          <div class="ml-2" id="input-section-changebutton">
                             <button id = "btn-change-task" class="btn btn-warning align-top" type="button">Update</button>
                           </div>`;
 
@@ -55,9 +58,7 @@
             }, 0);
             id++;
           }
-
-          var newTask = new TodoTask(taskName);
-          this.tasks[id] = newTask
+          this.tasks[id] = new TodoTask(taskName);
         }
 
         deleteTask(id) {
@@ -83,16 +84,23 @@
 
 
       $("#input-section").on("click", "#btn-add-task", function() {
-        var taskName = $("#input-task-name").val();
-        objMyList.addTask(taskName)
+        var taskName = $("#input-task-name").val().toString().trim();
+        if (taskName) {
+          objMyList.addTask(taskName)
+        } else
+          alert("You must provide a task name");
+
         renderDisplay();
       });
 
       $("#input-section").on("click", "#btn-change-task", function() {
+
         if (selectedTask != -1) {
           var newDescription = $("#input-task-name").val();
           objMyList.changeTask(newDescription, selectedTask)
           selectedTask = -1;
+        } else {
+          alert("You must first select a task.")
         }
         renderDisplay();
       });
@@ -115,23 +123,22 @@
       });
 
       $("#action-mode").click(function() {
-
         actionMode = $(this).val();
-        selectedTask = -1;
         switch (actionMode) {
           case "Delete":
             instructions = "Click a task to DELETE it from the list."
             break;
           case "Change":
-            instructions = "Click the task to change then press UPDATE button."
+            instructions = "Click a task to change then press UPDATE button."
             break;
           case "Mark Complete":
-            instructions = "Click the task to toggle COMPLETION status."
+            instructions = "Click a task to toggle COMPLETION status."
             break;
           default:
             instructions = "";
             break;
         }
+        selectedTask = -1;
         renderDisplay();
       });
 
@@ -161,8 +168,7 @@
         $('#list-of-tasks').empty();
         var rowCounter = 0;
         for (const [key, value] of Object.entries(objMyList.tasks)) {
-
-          var listItemHTML = templateListItemHTML.replace("${taskID}", key)
+          var listItemHTML = templateHTML_ListItem.replace("${taskID}", key)
           listItemHTML = listItemHTML.replace("${taskName}", (parseInt(key) + 1) + ". " + value.taskName);
           if (value.isComplete === "true") {
             listItemHTML = listItemHTML.replace("${style}", templateCSS_Completed);
@@ -193,17 +199,23 @@
     #input-task-name {
       width: 300px;
     }
+    
+    #list-of-tasks li:hover {
+      background-color: dodgerblue;
+    }
   </style>
+
 </head>
 
 <body>
+
   <div id="mainWrapper" class="p-3 bg-secondary mt-3">
     <section id="heading" class="h1 text-center bg-secondary">
       <div id="header" class="bg-primary text-white mb-3">
         <h1>TODO List</h1>
       </div>
 
-      <div id="instructions" class="container-fluid">
+      <div id="action-section" class="container-fluid">
         <div class="d-flex flex-row justify-content-between row-hl " id="input-section">
           <div class="form-group item-hl">
             <select id="action-mode" class="form-control">
@@ -214,15 +226,16 @@
             </select>
           </div>
         </div>
-
         <p id="instructions-text" class="h5 text-white">Instructions</p>
       </div>
+
     </section>
 
     <section id="section-tasks" class="r">
       <ul id="list-of-tasks" class="list-group m-2 h4 ">
         <!-- Tasks inserted here -->
       </ul>
+
     </section>
 
   </div>

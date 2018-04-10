@@ -1,39 +1,241 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <title></title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-    <script>
-    /*
-    Make a Todo List
+<html lang="en">
 
-    0. Make it so that after entering the task description, in the text field and clicking the "Add Task" button, a new task appears inside the element with the id todo-list.
-    1. the ability to remove tasks (add an x button)
-    2. the ability to check off tasks - strikes them out wo removing (add a checkbox)
-    3. the ability to delete a task
-    4. the ability to edit an existing task
+<head>
+  <meta charset="utf-8">
+  <title>TODO List</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
 
-    */
-    </script>
-    <style>
-    #wrapper {
-      max-width: 480px;
+  <script>
+    // STATE
+    //--------------------------------------------------------------------------------------------------------------------
+    var actionMode = "Add";
+    var instructions = "";
+    var selectedTask = -1;
+    var templateCSS_Completed = "text-decoration: line-through";
+    var templateListItemHTML = '<li class="list-group-item text-left" id="task-${taskID}" style="${style}">${taskName}</li>';
+    var addTaskHTML = `<div class="item-hl ml-2" id="input-section-textbox">
+                         <textarea id="input-task-name" rows="1" cols="50" class="form-control" placeholder="Task name..."></textarea>
+                       </div>
+                       <div class="item-hl ml-2 align-top" id="input-section-addbutton">
+                         <button id = "btn-add-task" class="btn btn-warning align-top" type="button">Add</button>
+                       </div>`;
+
+    var changeTaskHTML = `<div class="item-hl ml-2" id="input-section-textbox">
+                            <textarea id="input-task-name" rows="1" cols="40" class="form-control" placeholder="Task name..."></textarea>
+                          </div>
+                          <div class="item-hl ml-2" id="input-section-changebutton">
+                            <button id = "btn-change-task" class="btn btn-warning align-top" type="button">Update</button>
+                          </div>`;
+
+    // ACTION
+    //--------------------------------------------------------------------------------------------------------------------
+    $(function() {
+
+      class TodoTask {
+        constructor(name) {
+          this.taskName = name;
+          this.isComplete = "false";
+        }
+      }
+
+      class TodoList {
+        constructor(name) {
+          this.listName = name;
+          this.tasks = {};
+        }
+
+        addTask(taskName) {
+          var id = 0;
+          if (Object.keys(this.tasks).length) {
+            //find the largest task ID, increment by 1
+            id = Object.keys(objMyList.tasks).reduce((a, b) => {
+              return a > b ? a : b
+            }, 0);
+            id++;
+          }
+
+          var newTask = new TodoTask(taskName);
+          this.tasks[id] = newTask
+        }
+
+        deleteTask(id) {
+          delete this.tasks[id];
+        }
+
+        changeTask(description, id) {
+          this.tasks[id].taskName = description;
+        }
+
+        completeTask(id) {
+          this.tasks[id].isComplete = (this.tasks[id].isComplete === "true") ? "false" : "true";
+        }
+
+        setDefaultTasks() {
+          this.addTask("Don't suck at CSS");
+          this.addTask("Learn what fill.call() does");
+          this.addTask("Pay attention to Adam");
+          this.addTask("Learn JQuery");
+          this.addTask("Learn something else...");
+        }
+      }
+
+
+      $("#input-section").on("click", "#btn-add-task", function() {
+        var taskName = $("#input-task-name").val();
+        objMyList.addTask(taskName)
+        renderDisplay();
+      });
+
+      $("#input-section").on("click", "#btn-change-task", function() {
+        if (selectedTask != -1) {
+          var newDescription = $("#input-task-name").val();
+          objMyList.changeTask(newDescription, selectedTask)
+          selectedTask = -1;
+        }
+        renderDisplay();
+      });
+
+      $("#list-of-tasks").on("click", "li", function() {
+        var id = parseInt(this.id.toString().replace("task-", ""));
+        switch (actionMode) {
+          case "Delete":
+            objMyList.deleteTask(id);
+            break;
+          case "Change":
+            selectedTask = id;
+            break;
+          case "Mark Complete":
+            selectedTask = id;
+            objMyList.completeTask(selectedTask);
+            break;
+        }
+        renderDisplay();
+      });
+
+      $("#action-mode").click(function() {
+
+        actionMode = $(this).val();
+        selectedTask = -1;
+        switch (actionMode) {
+          case "Delete":
+            instructions = "Click a task to DELETE it from the list."
+            break;
+          case "Change":
+            instructions = "Click the task to change then press UPDATE button."
+            break;
+          case "Mark Complete":
+            instructions = "Click the task to toggle COMPLETION status."
+            break;
+          default:
+            instructions = "";
+            break;
+        }
+        renderDisplay();
+      });
+
+
+      function initializeList() {
+        objMyList.tasks = {};
+        objMyList.addTask("Don't suck at CSS");
+        objMyList.addTask("Learn what fill.call() does");
+        objMyList.addTask("Pay attention to Adam");
+        objMyList.addTask("Learn JQuery");
+        objMyList.addTask("Learn something else...");
+      }
+
+      function renderDisplay() {
+
+        $("#input-section-textbox").remove();
+        $("#input-section-addbutton").remove();
+        $("#input-section-changebutton").remove();
+        $("#instructions-text").html(instructions);
+
+        switch (actionMode) {
+          case "Add":
+            $("#input-section").append(addTaskHTML);
+            break;
+          case "Change":
+            $("#input-section").append(changeTaskHTML);
+            if (selectedTask != -1) {
+              $("#input-task-name").val(objMyList.tasks[selectedTask].taskName);
+            }
+            break;
+          default:
+            break;
+        }
+
+        //Display tasks
+        $('#list-of-tasks').empty();
+        var rowCounter = 0;
+        for (const [key, value] of Object.entries(objMyList.tasks)) {
+
+          var listItemHTML = templateListItemHTML.replace("${taskID}", key)
+          listItemHTML = listItemHTML.replace("${taskName}", (parseInt(key) + 1) + ". " + value.taskName);
+          if (value.isComplete === "true") {
+            listItemHTML = listItemHTML.replace("${style}", templateCSS_Completed);
+          } else
+            listItemHTML = listItemHTML.replace("${style}", "");
+
+          $("#list-of-tasks").append(listItemHTML);
+
+          rowCounter++;
+        }
+      }
+
+      //Kickoff
+      //-----------------------------------------------------------------------------------------------------------------
+      var objMyList = new TodoList("My TODO List");
+      objMyList.setDefaultTasks();
+      renderDisplay();
+
+    });
+  </script>
+
+  <style>
+    #mainWrapper {
+      max-width: 600px;
       margin: auto;
     }
-
-    #description, #search, #todo-list {
-      font-size: 1.5em;
+    
+    #input-task-name {
+      width: 300px;
     }
-    </style>
-  </head>
-  <body>
-    <div id="wrapper">
-      <input id="description" type="text" name="description">
-      <button id="add-button">Add Task</button>
-      <ul id="todo-list">
-        <li>Feed the cat</li>
+  </style>
+</head>
+
+<body>
+  <div id="mainWrapper" class="p-3 bg-secondary mt-3">
+    <section id="heading" class="h1 text-center bg-secondary">
+      <div id="header" class="bg-primary text-white mb-3">
+        <h1>TODO List</h1>
+      </div>
+
+      <div id="instructions" class="container-fluid">
+        <div class="d-flex flex-row justify-content-between row-hl " id="input-section">
+          <div class="form-group item-hl">
+            <select id="action-mode" class="form-control">
+              <option>Add</option>
+              <option>Change</option>
+              <option>Delete</option>
+              <option>Mark Complete</option>
+            </select>
+          </div>
+        </div>
+
+        <p id="instructions-text" class="h5 text-white">Instructions</p>
+      </div>
+    </section>
+
+    <section id="section-tasks" class="r">
+      <ul id="list-of-tasks" class="list-group m-2 h4 ">
+        <!-- Tasks inserted here -->
       </ul>
-    </div>
-  </body>
+    </section>
+
+  </div>
+</body>
+
+
 </html>
